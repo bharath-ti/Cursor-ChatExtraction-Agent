@@ -773,6 +773,61 @@ def get_me(user: dict = Depends(validate_api_key)):
     }
 
 
+
+
+class FolderRequest(BaseModel):
+    folder_id: str
+
+
+@app.post("/user/folder")
+def set_folder(req: FolderRequest, user: dict = Depends(validate_api_key)):
+    """
+    Extension POSTs the user's Google Drive folder ID here.
+    Stored in portfolio_agent.user_google_config so the portfolio
+    agent knows where to create monthly docs.
+    """
+    folder_id = req.folder_id.strip()
+    if not folder_id:
+        raise HTTPException(status_code=400, detail="folder_id is required")
+    email = user["email"]
+    try:
+        conn = get_db()
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO portfolio_agent.user_google_config
+                    (user_email, google_folder_id, configured_at)
+                VALUES (%s, %s, NOW())
+                ON CONFLICT (user_email) DO UPDATE SET
+                    google_folder_id = EXCLUDED.google_folder_id,
+                    configured_at    = NOW()
+            """, (email, folder_id))
+        conn.commit()
+        conn.close()
+        logger.info(f"Folder set for {email}: {folder_id}")
+        return {"ok": True, "message": f"Folder ID saved for {email}"}
+    except Exception as e:
+        logger.error(f"Folder set failed for {email}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/user/folder")
+def get_folder(user: dict = Depends(validate_api_key)):
+    """Returns the stored folder ID for the authenticated user."""
+    email = user["email"]
+    try:
+        conn = get_db()
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT google_folder_id FROM portfolio_agent.user_google_config "
+                "WHERE user_email = %s", (email,)
+            )
+            row = cur.fetchone()
+        conn.close()
+        return {"ok": True, "folder_id": row[0] if row else ""}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/ingest", response_model=IngestResponse)
 def ingest(req: IngestRequest, user: dict = Depends(validate_api_key)):
     if not req.chats:
