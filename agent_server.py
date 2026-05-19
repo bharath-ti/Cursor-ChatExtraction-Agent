@@ -107,7 +107,7 @@ def bootstrap_schema():
         logger.info("Schema bootstrap OK")
     except Exception as e:
         logger.error(f"Schema bootstrap failed: {e}")
-        raise
+        logger.error("Server will still start — check PA_SOURCE_DB_URL in Railway Variables")
 
 
 # ---------------------------------------------------------------------------
@@ -208,8 +208,14 @@ app.add_middleware(
 
 @app.get("/health")
 def health():
-    """Railway health check — must return 200."""
-    return {"ok": True, "version": "1.0.0", "time": datetime.now(timezone.utc).isoformat()}
+    """Railway health check — must always return 200, never touches DB."""
+    db_configured = bool(os.environ.get("PA_SOURCE_DB_URL"))
+    return {
+        "ok": True,
+        "version": "1.0.0",
+        "time": datetime.now(timezone.utc).isoformat(),
+        "db_configured": db_configured,
+    }
 
 
 @app.get("/status")
