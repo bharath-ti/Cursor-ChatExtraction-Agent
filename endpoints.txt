@@ -1,0 +1,11 @@
+# Check it's alive
+curl http://localhost:7842/health
+
+# Check status
+curl http://localhost:7842/status
+
+# Trigger a sync right now
+curl -X POST http://localhost:7842/sync-now
+
+# Watch logs
+curl http://localhost:7842/logs
