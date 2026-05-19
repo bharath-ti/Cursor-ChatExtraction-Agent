@@ -71,9 +71,8 @@ GOOGLE_SCOPES = " ".join([
     "openid",
     "email",
     "profile",
-    "https://www.googleapis.com/auth/gmail.send",
     "https://www.googleapis.com/auth/documents",
-    "https://www.googleapis.com/auth/drive.file",
+    "https://www.googleapis.com/auth/drive",
 ])
 
 GOOGLE_AUTH_URL     = "https://accounts.google.com/o/oauth2/v2/auth"
